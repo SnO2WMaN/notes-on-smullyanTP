@@ -122,7 +122,6 @@
 )[#body]
 
 #let code = sourcecode.with(
-  numbers-start: 40,
   gutter: 1em,
   frame: block.with(
     radius: 0pt,
@@ -139,6 +138,8 @@
 
 #let vdash = $tack.r$
 #let nvdash = $tack.r.not$
+#let vDash = $tack.r.double$
+#let nvDash = $tack.r.double.not$
 
 #let Thm = $upright("Thm")$
 #let Bew = $bold(upright("Pr"))$
