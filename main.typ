@@ -2,7 +2,7 @@
 
 #show: project.with(
   title: "Smullyanのシステムの形式化について",
-  authors: ("SnO2WMaN"),
+  authors: ("SnO2WMaN",),
 )
 
 #let Pred = $serif("Pred")$
