@@ -16,7 +16,7 @@
 
 = はじめに <sect:intro>
 
-@kurahashi_smullyans_2024 に沿って，Smullyanのシステムを形式化する．
+@kurahashi_smullyans_2024 に沿って，Smullyanのシステム @smullyan_truth_2013 とその諸定理を形式化する．
 
 = 本文
 
@@ -175,8 +175,8 @@ Leanでは`α`の素朴な集合の型`Set α`は，`α`から`Prop`への関数
     True_M &:= { angle.l H, X angle.r in Sent_M | X in Phi_M (H)} \
     False_M &:= Sent_M setminus True_M
   $
-  文 $S$ が $S in True_M$ のとき，$S$ が（$M$ で）真であるといい，これを $vDash S$ と書く．
-  逆に，$S in False_M$ のとき，$S$ が （$M$ で）偽であるという．
+  文 $S$ が $S in True_M$ のとき，$S$ が（$M$ で）真であるといい $vDash S$ と書く．
+  逆に $S in.not True_M$ のとき，$S$ が（$M$ で）真でないという．
 ]
 
 #code[
@@ -227,14 +227,14 @@ $mono(n)$ は否定(negation)を意図した記号である．
 ]
 
 #definition[
-  $vDash mono(n) S$ を $nvDash S$ と書いて，$S$ は真ではないという．
+  $vDash mono(n) S$ を $nvDash S$ と書き，$S$ の否定が真であることを表す．
 ]
 
-真でないことと偽であるというのは当然一致してほしいが，実際そうなる．
+$S$ の否定が真であることと，$S$ が真でないことは一致してほしいが，実際そうなる．
 
 #lemma[
-  $nvDash S <==> S in False_M$．
-]
+  $nvDash S <==> S in.not True_M$．
+] <lem:neg_true_iff_not_true>
 
 #proof[
   $S = angle.l H, X angle.r$ とする．定義に沿って変形していく．
@@ -245,10 +245,19 @@ $mono(n)$ は否定(negation)を意図した記号である．
     &<==> X in Phi_M (mono(n) H) \
     &<==> X in Sigma^*_M setminus Phi_M (H) \
     &<==> X in.not Phi_M (H) \
-    &<==> angle.l H, X angle.r in.not True_M \
-    &<==> angle.l H, X angle.r in False_M
+    &<==> angle.l H, X angle.r in.not True_M
   $
-  以上より $nvDash S <==> S in False_M$ である．
+  以上より $nvDash S <==> S in.not True_M$ である．
+]
+
+元の文の否定の否定が真なら，元の文も真である．すなわち二重否定は元に戻ることも確認出来る．
+
+#lemma[
+  $nvDash mono(n) S <==> vDash S$．
+] <lem:neg_not_true_iff_true>
+
+#proof[
+  定義に沿って変形すればよい．
 ]
 
 /*
@@ -280,6 +289,14 @@ $mono(r)$ は繰り返し(repeated)を意図した記号であり，この記号
   $
 ]
 
+#proof[
+  定義に沿って次の同値が成り立つ．
+  $vDash mono(r) H mono(r) H
+    <==> mono(r) H in Phi_M (mono(r) H)
+    <==> mono(r) H mono(r) H in Phi_M (H)
+    <==> vDash H mono(r) H mono(r) H$．
+]
+
 #remark[
   元の論文では不動点定理は「$vDash F <==> vDash H F$ となる $F$ が任意の $H$ に対して存在する」という形で言及されている．
   しかし @rmk:sentence でも述べたように，存在するという形の言明は実際に構成できるならば構成したほうが扱いやすくてよいという方針で形式化を進めている．
@@ -294,7 +311,11 @@ $mono(r)$ は繰り返し(repeated)を意図した記号であり，この記号
 ]<lem:fixpoint_prop>
 
 #proof[
-  $vDash F <==> vDash mono(n) H F <==> nvDash H F <==> F in.not Phi_M (H)$．
+  まず，不動点の定義より次の同値が成り立つ．
+  $
+    vDash F <==> vDash mono(n) H F <==> nvDash H F
+  $ <eq:lem:fixpoint_prop_1>
+  #ref(<lem:neg_true_iff_not_true>)から $nvDash H F <==> H F in.not True_M <==> F in.not Phi_M (H)$ が成り立つのでよい．
 ]
 
 
@@ -326,13 +347,21 @@ $mono(r)$ は繰り返し(repeated)を意図した記号であり，この記号
 #proof[
   $mono(n) H$ の不動点を $F$ とするとこれが所望の文となる．
 
-  今，$vDash F$ としてよい．なぜなら仮に $vDash F$ でないと仮定すると，#ref(<lem:fixpoint_prop>) より $F in Phi_M (H) subset.eq True_M$ が言えるので $vDash F$ でありおかしい．
+  今，$vDash F$ としてよい．なぜなら仮に $vDash F$ でないと仮定すると，#ref(<lem:fixpoint_prop>) より $F in Phi_M (H)$ が言えて，$Phi_M (H) subset.eq True_M$ であるため $vDash F$ となっておかしい．
 
-  まず，#ref(<lem:fixpoint_prop>)より $F in.not Phi_M (H)$ が従う．
+  まず#ref(<lem:fixpoint_prop>)より直ちに $F in.not Phi_M (H)$ が従う．
 
-  次に，$vDash F ==> vDash mono(n) H F ==> nvDash H F ==> H F in False_M ==> mono(n) F in.not Phi_M (H)$ が成立する．
+  次に $mono(n) F in.not Phi_M (H)$ だが，これは $Phi_M (H) subset.eq True_M$ だから $mono(n) F in.not True_M$ を示せば十分．
+  そして#ref(<lem:neg_true_iff_not_true>)と#ref(<lem:neg_not_true_iff_true>)から次の同値関係
+  $mono(n) F in.not True_M <==> nvDash mono(n) F <==> vDash F$
+  が成り立つのでよい．
 ]
 
 #remark[
   ここではわかりやすく「存在する」と書いたが，もちろん今までの方針と同じ様に#ref(<lem:fixpoint_prop>)の不動点がその性質を満たす具体例であるとして形式化してもよい．
 ]
+
+= おわりに
+
+いくつかの証明は定義より明らかなので，単純に簡約化(`simp`)すれば自明に済ませることが出来る．
+今回の形式化では300行程度のコードで済んでいるが，より精緻な分析や，算術上で実際にSmullyanモデルを上手く作れることなどの形式化について，上手くいくかは不明．
