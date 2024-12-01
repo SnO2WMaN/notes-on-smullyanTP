@@ -1,4 +1,5 @@
 #import "template.typ": *
+#import "@preview/rubby:0.10.1": get-ruby
 
 #show: project.with(
   title: "Smullyanのシステムの形式化について",
@@ -12,11 +13,67 @@
 #let False = $serif("False")$
 #let setminus = $backslash$
 
+#let Tr = $serif("Tr")$
+
 #let And = $class("relation", amp)$
+
+#heading(numbering: none)[メタ情報] <sect:meta>
+
+この文書は#link("https://adventar.org/calendars/10209")[証明支援系 Advent Calendar 2024]の3日目の記事です．
+
+この文書について
+- #link("https://sno2wman.github.io/notes-on-smullyanTP/main.pdf") で最新のPDFをダウンロードできます．
+- #link("https://github.com/SnO2WMaN/notes-on-smullyanTP") で誤植訂正やコメントなどを受け付けています．
+- #link("https://github.com/SnO2WMaN/notes-on-smullyanTP/blob/main/LICENSE")[CC-BY-4.0]でライセンスされています．
+
+この文書に載せられたコードの全文は#link("https://github.com/SnO2WMaN/smullyanTP")で公開しています．
 
 = はじめに <sect:intro>
 
-@kurahashi_smullyans_2024 に沿って，Smullyanのシステム @smullyan_truth_2013 とその諸定理を形式化する．
+論理学では自己言及的，パラドキシカルな事実が成り立つことが知られている．
+この文書はそれらの事実を解説する目的ではないので，詳細に関しては書かずに大雑把に述べることにする．
+太字の強調部分だけ読めば，とりあえず本文の理解には問題ないだろう．
+
+以下 $T$ は適当な算術の理論とする．
+
+#theorem([Gödel-Rosserの第一不完全性定理])[
+  無矛盾な理論 $T$ について，$T$ 上で*証明も反証も出来ない命題が存在する．*
+  すなわち，次のような文 $G_T$ が存在する：$T &nvdash G_T$ かつ $T &nvdash not G_T$．
+]<thm:goedel_rosser_first_incompleteness>
+
+普通は第一不完全性定理ではそのような命題が実際に真であるのかについては言及しない．
+ただし，真偽について言及するとキャッチーなので，次の形で述べられることもある#footnote[このような解説の是非については#cite(<kikuchi_2014>)に少し説明がある．]．
+
+#theorem([Boolos?])[
+  無矛盾な理論 $T$ について，*正しいが証明できない命題が存在する．*
+  すなわち，次のような文 $G_T$ が存在する：$NN &vDash G_T$ かつ $T &nvdash G_T$．
+]<thm:boolos_incompleteness>
+
+不完全性定理の証明，あるいはより一般に自己言及的な事実を示すためには，次の不動点補題（対角化補題などいろいろな呼び方がある）が鍵となる．
+
+#theorem([不動点補題])[
+  $phi(x)$ は $x$ のみを自由変数とする論理式とする．次の文 $F_phi$ が存在する．
+  $
+    T vdash F_phi <-> phi (ulcorner F_phi urcorner)
+  $
+  この意味で，$F_phi$ を $phi$ の不動点という．
+]<thm:carnap_fixpoint>
+
+また，次の命題も重要である．
+
+#theorem([Tarskiの定義不可能性定理])[
+  *真であるという性質は記述できない．*すなわち，次のような論理式 $True(x)$ は存在しない：任意の論理式 $phi$ について，
+  $
+    NN vDash phi <-> True(ulcorner phi urcorner)
+  $
+]<thm:tarski_undefinability>
+
+論理パズルの一般書などでも有名な論理学者Smullyanは#cite(<smullyan_truth_2013>)で，これらの定理を一般の読者に向けて説明するために，
+文字列の操作だけによる非常に簡単な形式体系を導入して，
+よく似た現象が起こることを示した．
+この文書では#cite(<smullyan_truth_2013>)を精査，整理し直した#cite(<kurahashi_smullyans_2024>)を参考に，Smullyanの形式体系を実際にLeanで形式化して定理を証明した．
+コードは300行程度で済んでいるので，興味のある読者は実際にコードを読んだり触ってみることを勧める．
+
 
 = 本文
 
@@ -70,7 +127,7 @@ Leanでは`α`の素朴な集合の型`Set α`は，`α`から`Prop`への関数
   ```
 ]
 
-また，$M$ の述語 $H in Pred_M$ に対して $Phi_M (H)$ によって定まる語の集合を `H.valuated` で表すことにする．
+また，$M$ の述語 $H$ に対して $Phi_M (H)$ を `H.valuated` で表すことにする．
 
 #code[
   ```lean
@@ -104,19 +161,17 @@ Leanでは`α`の素朴な集合の型`Set α`は，`α`から`Prop`への関数
     pred : M.Predicate
     word : M.Word
 
+  -- `S : M.Sentence` を `M.Word` として扱いたい場合は `pred` と `word` を単純に連結したものとする．
   def Sentence.toWord : M.Sentence → M.Word := fun ⟨H, X⟩ => ↑H ++ X
 
+  -- `↑S` と書けば `M.Word` として扱えるようになる．
   instance : Coe (M.Sentence) (M.Word) := ⟨Sentence.toWord⟩
   ```
 ]
 
 #remark[
   ここでは元の論文とは違う方針で文を定義している（本質的には同じ）．
-  元の定義はこうなっている．
-
-  #definition([文], numbering: none)[
-    $M$ の語 $S$ が $M$ の文であるとは，$S equiv H X$ となる $H in Pred_M$ と $X in Sigma^*_M$ が存在することをいう．
-  ]
+  元の定義は「$M$ の語 $S$ が $M$ の文であるとは，$S equiv H X$ となる $H in Pred_M$ と $X in Sigma^*_M$ が存在することをいう」となっている．
 
   これを素直に定義すると以下のようになる．ここで，`↑H` は `Predicate` 型の要素を `Word` 型の要素にキャストしている#footnote[Coercionと呼ぶ．今，`X`は型`M.Word`の要素だが，`H`は型`M.Predicate`の要素である．`++`すなわち関数`List.append`の型は`List α → List α → List α`であるため，`H ++ X`とすると型が合わない．そのためCoercionが必要となる．]と思ってもらえれば良い．
 
@@ -127,8 +182,8 @@ Leanでは`α`の素朴な集合の型`Set α`は，`α`から`Prop`への関数
   ]
 
   しかしこの定義は使いづらい．なぜならば `S`に対して*具体的に*`H`と`X`が何なのかの情報を持っておらず，ただ存在することだけを主張しているからである．
-  `S.isSentence`という命題からそのような性質を満たす`H`を取り出すには`Classical.choice`を使う必要がある．
-  この操作はLeanにおいては超越的な操作であり，また単純にこれを毎回書くのは面倒というデメリットがある．
+  `S.isSentence`という命題からそのような性質を満たす`H`を取り出すには`Exists.choice`を使う必要がある．
+  この操作はLeanにおいては超越的な/非構成的な操作であり，また単純にこれを毎回書くのは面倒というデメリットがある．
   したがって，より簡単に扱うために，文を構成する述語と語の組を直接扱うことにした．
 ] <rmk:sentence>
 
@@ -166,7 +221,6 @@ Leanでは`α`の素朴な集合の型`Set α`は，`α`から`Prop`への関数
   ```
 ]
 
-
 次に，モデル上の文の真偽を定める．
 
 #definition[文の真偽][
@@ -179,6 +233,8 @@ Leanでは`α`の素朴な集合の型`Set α`は，`α`から`Prop`への関数
   逆に $S in.not True_M$ のとき，$S$ が（$M$ で）真でないという．
 ]
 
+これをコードに書き下すと次のようになる．
+
 #code[
   ```lean
   def true_sentences (M : SmullyanModel) : Set M.Sentence := fun ⟨H, X⟩ => X ∈ H.valuated
@@ -186,8 +242,6 @@ Leanでは`α`の素朴な集合の型`Set α`は，`α`から`Prop`への関数
   def Sentence.isTrue (S : M.Sentence) := S ∈ M.true_sentences
 
   prefix:50 "⊨ " => Sentence.isTrue
-
-  def false_sentences (M : SmullyanModel) : Set M.Sentence := M.true_sentencesᶜ
   ```
 ]
 
@@ -202,6 +256,7 @@ $mono(n)$ は否定(negation)を意図した記号である．
   文 $S = angle.l H,X angle.r$ に対して，その否定の文 $mono(n) S = angle.l mono(n) H, X angle.r$ とする．
 ]
 
+これをコードに書き下すと次のようになる．`nH`のようにそのまま記号として使うとよくわからなくなるので`~H`で表すことにする．
 
 #code[
   ```lean
@@ -277,6 +332,9 @@ $mono(r)$ は繰り返し(repeated)を意図した記号であり，この記号
 
 == 不動点定理
 
+冒頭で，自己言及的な事実を示すためには#ref(<thm:carnap_fixpoint>)が重要であると述べた．
+このシステム上では#ref(<thm:smullyan_fixpoint>)がその定理に対応する．
+
 #definition[不動点][
   $M$ は $mono(r)$-モデルとする．
   $H$ を $M$ の述語として，文 $F = angle.l mono(r) H, mono(r) H angle.r$ を $H$ の不動点という．
@@ -287,7 +345,7 @@ $mono(r)$ は繰り返し(repeated)を意図した記号であり，この記号
   $
     vDash F <==> vDash H F
   $
-]
+]<thm:smullyan_fixpoint>
 
 #proof[
   定義に沿って次の同値が成り立つ．
@@ -321,7 +379,9 @@ $mono(r)$ は繰り返し(repeated)を意図した記号であり，この記号
 
 == 主定理
 
-それでは2つの主定理を示す．まずは#ref(<thm:theorem_T>)から．
+それではこのシステム上で成り立つ，2つの主定理を示す．
+
+まずは#ref(<thm:theorem_T>)から．これは#ref(<thm:tarski_undefinability>)に対応する定理である．
 
 #theorem[Theorem T][
   $M$ は $mono("nr")$-モデル であるとする．
@@ -337,7 +397,7 @@ $mono(r)$ は繰り返し(repeated)を意図した記号であり，この記号
   これらを合わせると $F in Phi_M (H) <==>  F in.not Phi_M (H)$ となっておかしい．
 ]
 
-次に#ref(<thm:theorem_G>)を示す．
+次に#ref(<thm:theorem_G>)を示す．これは#ref(<thm:goedel_rosser_first_incompleteness>)と#ref(<thm:boolos_incompleteness>)に対応する定理である．
 
 #theorem[Theorem G][
   $M$ は $mono("nr")$-モデルとし，述語 $H$ は $Phi_M (H) subset.eq True_M$ を満たすものとする．
