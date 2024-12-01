@@ -224,10 +224,9 @@ Leanでは`α`の素朴な集合の型`Set α`は，`α`から`Prop`への関数
 次に，モデル上の文の真偽を定める．
 
 #definition[文の真偽][
-  文の集合 $True_M$ と $False_M$ を次のように定義する．
+  文の集合 $True_M$ を次のように定義する．
   $
     True_M &:= { angle.l H, X angle.r in Sent_M | X in Phi_M (H)} \
-    False_M &:= Sent_M setminus True_M
   $
   文 $S$ が $S in True_M$ のとき，$S$ が（$M$ で）真であるといい $vDash S$ と書く．
   逆に $S in.not True_M$ のとき，$S$ が（$M$ で）真でないという．
