@@ -14,7 +14,7 @@
   set heading(numbering: "1.")
   show heading: set text(size: 14pt, font: ("Shippori Antique B1"), lang: "ja")
 
-  set text(size: 9pt, font: ("Shippori Mincho B1"), lang: "ja")
+  set text(size: 9.5pt, font: ("Shippori Mincho B1"), lang: "ja")
   show raw: set text(font: "JuliaMono", size: 7pt)
 
   show: thmrules.with(qed-symbol: [❏])
